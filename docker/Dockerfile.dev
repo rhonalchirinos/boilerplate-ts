@@ -1,0 +1,9 @@
+FROM node:24-alpine
+
+RUN corepack enable && corepack prepare yarn@4.9.1 --activate
+
+RUN echo 'nodeLinker: node-modules' > .yarnrc.yml
+
+EXPOSE 3000
+
+CMD ["corepack", "yarn", "dev"] 

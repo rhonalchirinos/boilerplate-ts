@@ -1,0 +1,4 @@
+{
+  "testing.automaticallyOpenPeekView": "never",
+  "jest.runMode": "on-demand"
+}

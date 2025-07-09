@@ -1,0 +1,26 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    working_dir: /app
+    ports:
+      - '${FORWARD_API:-3000}:3000'
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - db
+    command: sh -c "corepack yarn install && yarn start:dev"
+
+  db:
+    image: postgres:17-alpine
+    ports:
+      - '${FORWARD_POSTGRES_DB:-5440}:5432'
+    env_file:
+      - .env
+    volumes:
+      - ./docker/data/postgres-data:/var/lib/postgresql/data
