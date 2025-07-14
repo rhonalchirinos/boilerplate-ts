@@ -8,7 +8,7 @@ export class ArgonEncryptionService implements EncryptionService {
     return argon2.hash(password, { type: argon2.argon2id });
   }
 
-  async comparePassword(hashedPassword: string, plainTextPassword: string): Promise<boolean> {
-    return argon2.verify(hashedPassword, plainTextPassword);
+  async comparePassword(password: string, hash: string): Promise<boolean> {
+    return argon2.verify(hash, password);
   }
 }
