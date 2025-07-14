@@ -17,8 +17,7 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-      "allowJs": true,
-      "paths": {
+    "paths": {
       "@core/*": ["src/core/*"],
       "@app/*": ["src/app/*"],
       "@shared/*": ["src/shared/*"],
