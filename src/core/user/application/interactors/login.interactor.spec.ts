@@ -1,5 +1,5 @@
 import { LoginInteractor } from './login.interactor';
-import { UnAuthorizedException } from '@core/user/domain/exceptions/un-authorized.exception';
+import { InvalidCredentialsException } from '@core/user/domain/exceptions/invalid-credentials.exception';
 import { AccessTokenDto } from '../dto/access-token.dto';
 import { UserRepository } from '@core/user/domain/repositories/user.repository';
 import { EncryptionService } from '../services/encryption.service';
@@ -34,24 +34,26 @@ describe('LoginInteractor', () => {
     interactor = new LoginInteractor(userRepository, encryptionService, tokenGenerator);
   });
 
-  it('should throw UnAuthorizedException if email or password is missing', async () => {
-    await expect(interactor.execute('', 'password')).rejects.toThrow(UnAuthorizedException);
-    await expect(interactor.execute('email@test.com', '')).rejects.toThrow(UnAuthorizedException);
-  });
-
-  it('should throw UnAuthorizedException if user is not found', async () => {
-    userRepository.findByEmail.mockResolvedValue(null);
-    await expect(interactor.execute('email@test.com', 'password')).rejects.toThrow(
-      UnAuthorizedException,
+  it('should throw InvalidCredentialsException if email or password is missing', async () => {
+    await expect(interactor.execute('', 'password')).rejects.toThrow(InvalidCredentialsException);
+    await expect(interactor.execute('email@test.com', '')).rejects.toThrow(
+      InvalidCredentialsException,
     );
   });
 
-  it('should throw UnAuthorizedException if password is invalid', async () => {
+  it('should throw InvalidCredentialsException if user is not found', async () => {
+    userRepository.findByEmail.mockResolvedValue(null);
+    await expect(interactor.execute('email@test.com', 'password')).rejects.toThrow(
+      InvalidCredentialsException,
+    );
+  });
+
+  it('should throw InvalidCredentialsException if password is invalid', async () => {
     const user = new User({ id: '1', email: 'email@test.com', name: 'Test', password: 'hashed' });
     userRepository.findByEmail.mockResolvedValue(user);
     encryptionService.comparePassword.mockResolvedValue(false);
     await expect(interactor.execute('email@test.com', 'password')).rejects.toThrow(
-      UnAuthorizedException,
+      InvalidCredentialsException,
     );
   });
 

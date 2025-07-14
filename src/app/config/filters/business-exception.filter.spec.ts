@@ -1,5 +1,5 @@
 import { BusinessExceptionFilter } from './business-exception.filter';
-import { UnAuthorizedException } from '@core/user/domain/exceptions/un-authorized.exception';
+import { InvalidCredentialsException } from '@core/user/domain/exceptions/invalid-credentials.exception';
 import { ArgumentsHost } from '@nestjs/common';
 import { Response } from 'express';
 
@@ -35,8 +35,8 @@ describe('BusinessExceptionFilter', () => {
     } as unknown as ArgumentsHost;
   });
 
-  it('should handle UnAuthorizedException and return 401', () => {
-    const exception = new UnAuthorizedException('Unauthorized!');
+  it('should handle InvalidCredentialsException and return 401', () => {
+    const exception = new InvalidCredentialsException('Unauthorized!');
     const statusSpyOn = jest.spyOn(mockResponse, 'status');
     const jsonSpyOn = jest.spyOn(mockResponse, 'json');
 
@@ -45,7 +45,7 @@ describe('BusinessExceptionFilter', () => {
     expect(jsonSpyOn).toHaveBeenCalledWith({ message: 'Unauthorized!' });
   });
 
-  it('should rethrow non-UnAuthorizedException', () => {
+  it('should rethrow non-InvalidCredentialsException', () => {
     const exception = new Error('Other error');
     expect(() => filter.catch(exception, mockHost)).toThrow(exception);
   });

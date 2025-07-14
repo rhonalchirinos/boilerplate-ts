@@ -1,7 +1,7 @@
-export class UnAuthorizedException extends Error {
+export class InvalidCredentialsException extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'UnauthorizedException';
+    this.name = 'Invalid Credentials Exception';
   }
 
   toJSON() {
