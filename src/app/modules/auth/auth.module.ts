@@ -4,6 +4,7 @@ import { PrismaUserRepository } from '@app/modules/auth/infra/repositories/prism
 import { ArgonEncryptionService } from '@app/modules/auth/infra/argon2/argon-encryption.service';
 import { JwtTokenGenerator } from '@app/modules/auth/infra/jwt/jwt-token-generator';
 import { LoginInteractor } from '@core/user/application/interactors/login.interactor';
+import { LoginValidationPipe } from './infra/zod/login-validation.pipe';
 
 @Module({
   controllers: [AuthController],
@@ -11,6 +12,7 @@ import { LoginInteractor } from '@core/user/application/interactors/login.intera
     PrismaUserRepository,
     ArgonEncryptionService,
     JwtTokenGenerator,
+    LoginValidationPipe,
     {
       provide: LoginInteractor.name,
       useFactory: (

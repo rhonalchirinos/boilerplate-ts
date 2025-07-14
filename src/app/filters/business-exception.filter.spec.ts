@@ -42,7 +42,7 @@ describe('BusinessExceptionFilter', () => {
 
     filter.catch(exception, mockHost);
     expect(statusSpyOn).toHaveBeenCalledWith(401);
-    expect(jsonSpyOn).toHaveBeenCalledWith({ message: 'Unauthorized!' });
+    expect(jsonSpyOn).toHaveBeenCalledWith({ message: 'Unauthorized!', errors: [] });
   });
 
   it('should rethrow non-InvalidCredentialsException', () => {

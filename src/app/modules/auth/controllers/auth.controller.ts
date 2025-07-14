@@ -1,6 +1,8 @@
 import { AccessTokenDto } from '@core/user/application/dto/access-token.dto';
 import { LoginInteractor } from '@core/user/application/interactors/login.interactor';
 import { Body, Controller, Inject, Post } from '@nestjs/common';
+import { LoginDto } from './dto/login.dto';
+import { LoginValidationPipe } from '../infra/zod/login-validation.pipe';
 
 @Controller('auth')
 export class AuthController {
@@ -13,7 +15,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  async login(@Body() body: { email: string; password: string }): Promise<AccessTokenDto> {
-    return await this.loginInteractor.execute(body.email, body.password);
+  async login(@Body(new LoginValidationPipe()) loginDto: LoginDto): Promise<AccessTokenDto> {
+    return await this.loginInteractor.execute(loginDto.email, loginDto.password);
   }
 }
