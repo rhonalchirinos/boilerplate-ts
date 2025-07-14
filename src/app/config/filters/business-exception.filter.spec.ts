@@ -37,11 +37,10 @@ describe('BusinessExceptionFilter', () => {
 
   it('should handle UnAuthorizedException and return 401', () => {
     const exception = new UnAuthorizedException('Unauthorized!');
-
-    filter.catch(exception, mockHost);
     const statusSpyOn = jest.spyOn(mockResponse, 'status');
     const jsonSpyOn = jest.spyOn(mockResponse, 'json');
 
+    filter.catch(exception, mockHost);
     expect(statusSpyOn).toHaveBeenCalledWith(401);
     expect(jsonSpyOn).toHaveBeenCalledWith({ message: 'Unauthorized!' });
   });

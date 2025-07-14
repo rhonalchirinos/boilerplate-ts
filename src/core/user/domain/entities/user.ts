@@ -48,7 +48,6 @@ export class User {
       id: this._id,
       email: this._email,
       name: this._name,
-      password: this._password,
     };
   }
 }
