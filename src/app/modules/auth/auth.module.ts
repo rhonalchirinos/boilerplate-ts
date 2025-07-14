@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { AuthController } from './controllers/auth.controller';
-import { PrismaUserRepository } from './drivers/repositories/prisma-user.repository';
-import { ArgonEncryptionService } from '../../drivers/argon2/argon-encryption.service';
-import { JwtTokenGenerator } from './drivers/services/jwt-token-generator';
+import { AuthController } from '@app/modules/auth/controllers/auth.controller';
+import { PrismaUserRepository } from '@app/modules/auth/infra/repositories/prisma-user.repository';
+import { ArgonEncryptionService } from '@app/modules/auth/infra/argon2/argon-encryption.service';
+import { JwtTokenGenerator } from '@app/modules/auth/infra/jwt/jwt-token-generator';
 import { LoginInteractor } from '@core/user/application/interactors/login.interactor';
 
 @Module({

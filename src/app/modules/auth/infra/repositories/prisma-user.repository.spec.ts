@@ -1,4 +1,4 @@
-import { PrismaService } from '@app/config/database/services/prisma.service';
+import { PrismaService } from '@app/config/database/infra/prisma.service';
 import { User } from '@core/user/domain/entities/user';
 import { PrismaUserRepository } from './prisma-user.repository';
 
