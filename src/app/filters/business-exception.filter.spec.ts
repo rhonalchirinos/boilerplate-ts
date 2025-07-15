@@ -10,12 +10,6 @@ jest.mock('express', () => ({
   })),
 }));
 
-jest.mock('@nestjs/common', () => ({
-  ArgumentsHost: jest.fn().mockImplementation(() => ({
-    switchToHttp: jest.fn().mockReturnThis(),
-  })),
-}));
-
 describe('BusinessExceptionFilter', () => {
   let filter: BusinessExceptionFilter;
   let mockHost: ArgumentsHost;

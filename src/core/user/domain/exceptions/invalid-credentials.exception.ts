@@ -1,12 +1,7 @@
-export class InvalidCredentialsException extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'Invalid Credentials Exception';
-  }
+import { DomainException } from '../../../shared/domain.exception';
 
-  toJSON() {
-    return {
-      message: this.message,
-    };
+export class InvalidCredentialsException extends DomainException {
+  constructor(message: string = 'Credenciales inválidas.') {
+    super(message, 'InvalidCredentialsException');
   }
 }

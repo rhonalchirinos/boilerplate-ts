@@ -82,9 +82,7 @@ export class PrismaUserRepository implements UserRepository {
   }
 
   async save(user: User): Promise<User> {
-    const exists = await this.findById(user.id);
-
-    if (exists) {
+    if (user.id) {
       return this.update(user);
     }
 
