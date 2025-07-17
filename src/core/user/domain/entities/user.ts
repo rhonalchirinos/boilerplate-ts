@@ -1,53 +1,56 @@
 export class User {
-  private _id: string;
-  private _email: string;
-  private _name: string;
-  private _password: string;
+  private constructor(
+    private id: string,
+    private email: string,
+    private name: string,
+    private password: string,
+  ) {}
 
-  constructor(args: Partial<User> = {}) {
-    this._id = args?.id || '';
-    this._email = args?.email || '';
-    this._name = args?.name || '';
-    this._password = args?.password || '';
+  static create(params: { id?: string; email: string; name: string; password: string }): User {
+    return new User(params.id!, params.email, params.name, params.password);
   }
 
-  get id(): string {
-    return this._id;
+  changePassword(newPassword: string): void {
+    if (newPassword.length < 8) {
+      throw new Error('Password must be at least 8 characters');
+    }
+
+    this.password = newPassword;
   }
 
-  set id(value: string) {
-    this._id = value;
+  rename(newName: string): void {
+    if (!newName.trim()) {
+      throw new Error('Name cannot be empty');
+    }
+
+    this.name = newName;
   }
 
-  get email(): string {
-    return this._email;
+  getId(): string {
+    return this.id;
   }
 
-  set email(value: string) {
-    this._email = value;
+  getEmail(): string {
+    return this.email;
   }
 
-  get name(): string {
-    return this._name;
+  getName(): string {
+    return this.name;
   }
 
-  set name(value: string) {
-    this._name = value;
+  getPassword(): string {
+    return this.password;
   }
 
-  get password(): string {
-    return this._password;
-  }
-
-  set password(value: string) {
-    this._password = value;
+  setId(id: string): void {
+    this.id = id;
   }
 
   toJSON(): object {
     return {
-      id: this._id,
-      email: this._email,
-      name: this._name,
+      id: this.id,
+      email: this.email,
+      name: this.name,
     };
   }
 }

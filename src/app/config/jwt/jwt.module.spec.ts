@@ -8,7 +8,6 @@ describe('CustomJwtModule', () => {
   let configService: jest.Mocked<ConfigService>;
 
   beforeEach(async () => {
-    // Create a mock for ConfigService
     configService = Object.assign({} as jest.Mocked<ConfigService>, {
       getOrThrow: jest.fn().mockReturnValue('test-secret'),
     });
@@ -18,7 +17,7 @@ describe('CustomJwtModule', () => {
         CustomJwtModule,
         ConfigModule.forRoot({
           isGlobal: true,
-          load: [() => ({ JWT_SECRET: 'test-secret' })],
+          load: [() => ({ jwt: { secret: 'test-secret' } })],
         }),
       ],
     })
@@ -36,7 +35,7 @@ describe('CustomJwtModule', () => {
     const jwtService = module.get(JwtService);
 
     expect(jwtService).toBeDefined();
-    expect(getOrThrowSpy).toHaveBeenCalledWith('JWT_SECRET');
+    expect(getOrThrowSpy).toHaveBeenCalledWith('jwt.secret');
   });
 
   it('should provide JwtModule with correct secret', () => {
@@ -44,7 +43,7 @@ describe('CustomJwtModule', () => {
     const jwtModule = module.get(JwtService);
 
     expect(jwtModule).toBeDefined();
-    expect(getOrThrowSpy).toHaveBeenCalledWith('JWT_SECRET');
+    expect(getOrThrowSpy).toHaveBeenCalledWith('jwt.secret');
   });
 
   it('should throw an exception if JWT_SECRET is not set', async () => {

@@ -39,7 +39,7 @@ describe('PrismaUserRepository', () => {
     const user = await repository.findById('1');
     expect(user).toBeInstanceOf(User);
     expect(findUniqueSpy).toHaveBeenCalledWith({ where: { id: '1' } });
-    expect(user?.id).toBe('1');
+    expect(user?.getId()).toBe('1');
   });
 
   it('should return null if user not found by id', async () => {
@@ -59,7 +59,7 @@ describe('PrismaUserRepository', () => {
     });
     const user = await repository.findByEmail('a@b.com');
     expect(user).toBeInstanceOf(User);
-    expect(user?.email).toBe('a@b.com');
+    expect(user?.getEmail()).toBe('a@b.com');
   });
 
   it('should return null if user not found by email', async () => {
@@ -70,7 +70,7 @@ describe('PrismaUserRepository', () => {
   });
 
   it('should create a user', async () => {
-    const user = new User({ id: '', email: 'a@b.com', name: 'A', password: 'pass' });
+    const user = User.create({ id: '', email: 'a@b.com', name: 'A', password: 'pass' });
     const createSpy = jest.spyOn(prisma.user, 'create');
     createSpy.mockResolvedValue({
       id: '1',
@@ -79,7 +79,7 @@ describe('PrismaUserRepository', () => {
       password: 'pass',
     });
     const created = await repository.create(user);
-    expect(created.id).toBe('1');
+    expect(created.getId()).toBe('1');
     expect(createSpy).toHaveBeenCalled();
   });
 
@@ -91,7 +91,7 @@ describe('PrismaUserRepository', () => {
   });
 
   it('should update a user', async () => {
-    const user = new User({ id: '1', email: 'a@b.com', name: 'A', password: 'pass' });
+    const user = User.create({ id: '1', email: 'a@b.com', name: 'A', password: 'pass' });
     const updateSpyOn = jest.spyOn(prisma.user, 'update');
     updateSpyOn.mockResolvedValue({
       id: '1',
@@ -105,7 +105,7 @@ describe('PrismaUserRepository', () => {
   });
 
   it('should save (update) if user exists', async () => {
-    const user = new User({ id: '1', email: 'a@b.com', name: 'A', password: 'pass' });
+    const user = User.create({ id: '1', email: 'a@b.com', name: 'A', password: 'pass' });
     jest.spyOn(repository, 'findById').mockResolvedValue(user);
     jest.spyOn(repository, 'update').mockResolvedValue(user);
     const saved = await repository.save(user);
@@ -113,7 +113,7 @@ describe('PrismaUserRepository', () => {
   });
 
   it('should save (create) if user does not exist', async () => {
-    const user = new User({ id: '', email: 'a@b.com', name: 'A', password: 'pass' });
+    const user = User.create({ id: '', email: 'a@b.com', name: 'A', password: 'pass' });
     jest.spyOn(repository, 'findById').mockResolvedValue(null);
     jest.spyOn(repository, 'create').mockResolvedValue(user);
     const saved = await repository.save(user);

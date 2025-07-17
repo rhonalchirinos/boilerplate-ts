@@ -18,6 +18,7 @@ export class SignupValidationPipe extends ZodValidationPipe<SignupUserDTO> {
           .regex(/[^a-zA-Z0-9]/, {
             message: 'Password must contain at least one special character',
           }),
+        name: z.string().optional(),
       }),
       'Invalid signup credentials',
     );

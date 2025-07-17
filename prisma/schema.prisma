@@ -15,8 +15,23 @@ datasource db {
 }
 
 model User {
-  id       String  @id @default(uuid()) @db.Uuid
-  email    String  @unique
-  name     String?
-  password String?
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique @db.VarChar(80)
+  name         String?   @db.VarChar(120)
+  password     String?   @db.VarChar(120)
+  accessTokens Session[] @relation("User")
+
+  @@map("users")
+}
+
+model Session {
+  id        String    @id @default(uuid()) @db.Uuid
+  refresh   String    @unique @db.VarChar(36)
+  sub       String    @unique @db.VarChar(36)
+  expiresAt DateTime?
+  createdAt DateTime? @default(now())
+  userId String @db.Uuid
+  user   User   @relation("User", fields: [userId], references: [id])
+
+  @@map("sessions")
 }

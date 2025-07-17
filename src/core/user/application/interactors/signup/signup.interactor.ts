@@ -1,19 +1,24 @@
 import { UserRepository } from '@core/user/domain/repositories/user.repository';
 import { EncryptionService } from '@core/user/application/services/encryption.service';
-import { AccessTokenDto } from '../dto/access-token.dto';
 import { User } from '@core/user/domain/entities/user';
 import { TokenGenerator } from '@core/user/application/services/token-generator.service';
 import { EmailAlreadyExistsException } from '@core/user/domain/exceptions/email-already-exists.exception';
 import { WeakPasswordException } from '@core/user/domain/exceptions/weak-password.exception';
+import { SessionRepository } from '@core/user/domain/repositories/session.repository';
+import { AccessTokenDTO } from '../../dto/access-token.dto';
+import { GenerateTokenInteractor } from '../token/generate-token.interactor';
 
-export class SignupInteractor {
+export class SignupInteractor extends GenerateTokenInteractor {
   constructor(
-    private authRepository: UserRepository,
-    private encryptionService: EncryptionService,
-    private readonly tokenGenerator: TokenGenerator,
-  ) {}
+    private readonly authRepository: UserRepository,
+    private readonly encryptionService: EncryptionService,
+    protected readonly tokenGenerator: TokenGenerator,
+    private readonly sessionRepository: SessionRepository,
+  ) {
+    super(tokenGenerator);
+  }
 
-  async execute(email: string, password: string): Promise<AccessTokenDto> {
+  async execute(email: string, password: string, name: string): Promise<AccessTokenDTO> {
     const emailExists = await this.emailExists(email);
     if (emailExists) {
       throw new EmailAlreadyExistsException();
@@ -24,15 +29,18 @@ export class SignupInteractor {
     }
 
     const hashedPassword = await this.encryptionService.hashPassword(String(password));
-    const user = new User({
+    const user = User.create({
       email: email.toLocaleLowerCase(),
       password: hashedPassword,
+      name,
     });
 
     await this.authRepository.save(user);
 
     if (user) {
-      return this.tokenGenerator.generate({ id: user.id, email: user.email, name: user.name });
+      const { session, token, refresh } = await this.generateSession(user.getId());
+      await this.sessionRepository.save(session);
+      return this.accessTokenToJson(user, token, refresh);
     }
 
     return user;

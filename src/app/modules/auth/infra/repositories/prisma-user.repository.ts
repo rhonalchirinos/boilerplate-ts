@@ -5,7 +5,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findById(id: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
@@ -16,7 +16,7 @@ export class PrismaUserRepository implements UserRepository {
       return null;
     }
 
-    return new User({
+    return User.create({
       id: '' + user.id,
       email: user.email,
       name: user.name ?? '',
@@ -35,26 +35,12 @@ export class PrismaUserRepository implements UserRepository {
       return null;
     }
 
-    return new User({
+    return User.create({
       id: '' + user.id,
       email: user.email,
       name: user.name ?? '',
       password: user.password ?? '',
     });
-  }
-
-  async create(user: User): Promise<User> {
-    const createdUser = await this.prisma.user.create({
-      data: {
-        email: user.email.toLocaleLowerCase(),
-        name: user.name,
-        password: user.password,
-      },
-    });
-
-    user.id = '' + createdUser.id;
-
-    return user;
   }
 
   async existsEmail(email: string): Promise<boolean> {
@@ -69,12 +55,26 @@ export class PrismaUserRepository implements UserRepository {
     return userExists > 0;
   }
 
+  async create(user: User): Promise<User> {
+    const createdUser = await this.prisma.user.create({
+      data: {
+        email: user.getEmail().toLocaleLowerCase(),
+        name: user.getName(),
+        password: user.getPassword(),
+      },
+    });
+
+    user.setId(createdUser.id);
+
+    return user;
+  }
+
   async update(user: User): Promise<User> {
     await this.prisma.user.update({
-      where: { id: user.id },
+      where: { id: user.getId() },
       data: {
-        name: user.name,
-        password: user.password,
+        name: user.getName(),
+        password: user.getPassword(),
       },
     });
 
@@ -82,7 +82,7 @@ export class PrismaUserRepository implements UserRepository {
   }
 
   async save(user: User): Promise<User> {
-    if (user.id) {
+    if (user.getId()) {
       return this.update(user);
     }
 

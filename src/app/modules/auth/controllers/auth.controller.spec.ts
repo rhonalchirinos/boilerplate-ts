@@ -1,22 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { ExecutionContext, INestApplication, UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
-import { LoginInteractor } from '@core/user/application/interactors/login.interactor';
-import { SignupInteractor } from '@core/user/application/interactors/signup.interactor';
-import { AccessTokenDto } from '@core/user/application/dto/access-token.dto';
+import { LoginInteractor } from '@core/user/application/interactors/login/login.interactor';
+import { SignupInteractor } from '@core/user/application/interactors/signup/signup.interactor';
+import { AccessTokenDTO } from '@core/user/application/dto/access-token.dto';
 import { InvalidCredentialsException } from '@core/user/domain/exceptions/invalid-credentials.exception';
 import { ErrorDTO } from '@shared/utils/format-error';
 import { BusinessExceptionFilter } from '@app/filters/business-exception.filter';
 import * as request from 'supertest';
+import { DestroySessionInteractor } from '@core/user/application/interactors/session/destroy-session.interactor';
+import { Session } from '@core/user/domain/entities/session';
+import { RequestSession } from '@shared/utils/request-session';
+import { JwtAuthGuard } from '@app/modules/auth/infra/jwt/auth/jwt-auth.guard';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let mockLoginInteractor: jest.Mocked<LoginInteractor>;
   let mockSignupInteractor: jest.Mocked<SignupInteractor>;
+  let mockDestroySessionInteractor: jest.Mocked<DestroySessionInteractor>;
 
   beforeAll(async () => {
     mockLoginInteractor = { execute: jest.fn() } as unknown as jest.Mocked<LoginInteractor>;
+
     mockSignupInteractor = { execute: jest.fn() } as unknown as jest.Mocked<SignupInteractor>;
+
+    mockDestroySessionInteractor = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<DestroySessionInteractor>;
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -29,11 +39,17 @@ describe('AuthController (e2e)', () => {
           provide: SignupInteractor.name,
           useValue: mockSignupInteractor,
         },
+        {
+          provide: DestroySessionInteractor.name,
+          useValue: mockDestroySessionInteractor,
+        },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: jest.fn() })
+      .compile();
 
     app = moduleFixture.createNestApplication();
-
     app.useGlobalFilters(new BusinessExceptionFilter());
     await app.init();
   });
@@ -45,25 +61,35 @@ describe('AuthController (e2e)', () => {
   describe('/auth/login (POST)', () => {
     it('should return access token if login is successful', async () => {
       const body = { email: 'test@example.com', password: 'password123' };
-      const accessToken: AccessTokenDto = { token: 'token' };
-
+      const accessToken: AccessTokenDTO = {
+        success: true,
+        message: 'Token generated successfully',
+        data: {
+          user: {
+            id: 'be5c84d0-3a8b-474a-8197-821adade19af',
+            name: 'Hilda Dicki',
+            email: 'ralph.johns45@yahoo.com',
+          },
+          tokens: {
+            accessToken: 'kkcqflKghKzPhpAf5F0nhGc50wabXZO8zWp6CwVTHbE',
+            refreshToken: 'LAWrT9tPNHaeiKneDtH6-gT_ESDU-M_NLJUN5dvH-mQ',
+          },
+        },
+        timestamp: '2025-07-17T01:42:42.262Z',
+      };
       const executeMock = jest.spyOn(mockLoginInteractor, 'execute');
       executeMock.mockResolvedValue(accessToken);
-
       const response = await request(app.getHttpServer())
         .post('/auth/login')
         .send(body)
         .expect(201);
-
       expect(executeMock).toHaveBeenCalledWith(body.email, body.password);
       expect(response.body).toEqual(accessToken);
     });
 
     it('should return 401 if login fails', async () => {
       const body = { email: 'fail@example.com', password: 'wrongpass' };
-
       const error = new InvalidCredentialsException('Invalid credentials');
-
       const executeMock = jest.spyOn(mockLoginInteractor, 'execute');
       executeMock.mockRejectedValue(error);
 
@@ -82,37 +108,67 @@ describe('AuthController (e2e)', () => {
         .post('/auth/login')
         .send(invalidBody)
         .expect(422);
-
       const bodyResponse = response.body as ErrorDTO;
       expect(bodyResponse.message).toBeDefined();
     });
   });
 
   describe('/auth/signup (POST)', () => {
-    it('should return access token if signup is successful', async () => {
-      const body = { email: 'signup@example.com', password: 'signup@Pass123' };
-      const accessToken: AccessTokenDto = { token: 'signup-token' };
-
+    it('should return 201 if signup is successful', async () => {
+      const body = { email: 'signup@example.com', password: 'signup@Pass123', name: 'Hilda Dicki' };
+      const accessToken: AccessTokenDTO = {
+        success: true,
+        message: 'Token generated successfully',
+        data: {
+          user: {
+            id: 'be5c84d0-3a8b-474a-8197-821adade19af',
+            name: 'Hilda Dicki',
+            email: 'ralph.johns45@yahoo.com',
+          },
+          tokens: {
+            accessToken: 'kkcqflKghKzPhpAf5F0nhGc50wabXZO8zWp6CwVTHbE',
+            refreshToken: 'LAWrT9tPNHaeiKneDtH6-gT_ESDU-M_NLJUN5dvH-mQ',
+          },
+        },
+        timestamp: '2025-07-17T01:42:42.262Z',
+      };
       const executeMock = jest.spyOn(mockSignupInteractor, 'execute');
       executeMock.mockResolvedValue(accessToken);
-
       const response = await request(app.getHttpServer())
         .post('/auth/signup')
         .send(body)
         .expect(201);
-
-      expect(executeMock).toHaveBeenCalledWith(body.email, body.password);
+      expect(executeMock).toHaveBeenCalledWith(body.email, body.password, body.name);
       expect(response.body).toEqual(accessToken);
     });
 
     it('should return 422 if signup fails', async () => {
-      const body = { email: 'fail@example.com', password: 'wrongpass' };
-
+      const body = { email: 'fail@example.com', password: 'wrongpass', name: 'Hilda Dicki' };
+      // Mock the interactor to throw an error with the expected structure
+      const error = {
+        status: 422,
+        message: 'Invalid signup credentials',
+        errors: [
+          {
+            field: 'password',
+            error: 'Password must contain at least one uppercase letter',
+          },
+          {
+            field: 'password',
+            error: 'Password must contain at least one number',
+          },
+          {
+            field: 'password',
+            error: 'Password must contain at least one special character',
+          },
+        ],
+      };
+      const executeMock = jest.spyOn(mockSignupInteractor, 'execute');
+      executeMock.mockRejectedValue(error);
       const response = await request(app.getHttpServer())
         .post('/auth/signup')
         .send(body)
         .expect(422);
-      console.error(response.body);
       const bodyResponse = response.body as ErrorDTO;
       expect(bodyResponse.message).toBe('Invalid signup credentials');
       expect(bodyResponse.errors).toBeDefined();
@@ -138,9 +194,37 @@ describe('AuthController (e2e)', () => {
         .post('/auth/signup')
         .send(invalidBody)
         .expect(422);
-
       const bodyResponse = response.body as ErrorDTO;
       expect(bodyResponse.message).toBeDefined();
+    });
+  });
+
+  describe('/auth/logout (DELETE)', () => {
+    it('should destroy the session and return 204', async () => {
+      const session = Session.create({
+        id: 'session-id',
+        sub: 'user-sub',
+        userId: 'user-id',
+        refresh: 'refresh-token',
+        expiresAt: new Date(Date.now() + 3600000), // 1 hour
+        createdAt: new Date(),
+      });
+      const guard = app.get(JwtAuthGuard);
+      jest.spyOn(guard, 'canActivate').mockImplementation((context: ExecutionContext) => {
+        const request = context.switchToHttp().getRequest<RequestSession>();
+        request.user = session;
+        return true;
+      });
+      const destroySessionSpy = jest.spyOn(mockDestroySessionInteractor, 'execute');
+      await request(app.getHttpServer()).delete('/auth/logout').expect(204);
+      expect(destroySessionSpy).toHaveBeenCalledWith(session);
+    });
+    it('should return 401 if user is not authenticated', async () => {
+      const guard = app.get(JwtAuthGuard);
+      jest.spyOn(guard, 'canActivate').mockImplementation(() => {
+        throw new UnauthorizedException();
+      });
+      await request(app.getHttpServer()).delete('/auth/logout').expect(401);
     });
   });
 });
