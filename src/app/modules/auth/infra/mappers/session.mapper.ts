@@ -15,12 +15,13 @@ export class SessionMapper {
 
   static toPersistence(session: Session): prisma.Session {
     return {
-      id: session.getId() ?? '',
-      userId: session.getUserId() ?? '',
-      refresh: session.getRefreshToken() ?? '',
-      sub: session.getSub() ?? '',
-      expiresAt: session.getExpiresAt() ?? null,
-      createdAt: session.getCreatedAt() ?? new Date(),
+      id: session.getId()!,
+      userId: session.getUserId(),
+      refresh: session.getRefresh(),
+      sub: session.getSub(),
+      expiresAt: session.getExpiresAt(),
+      createdAt: session.getCreatedAt(),
+      deviceId: session.getDeviceId()!,
     };
   }
 }

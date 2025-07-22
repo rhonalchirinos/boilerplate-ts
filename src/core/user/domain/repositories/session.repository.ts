@@ -1,4 +1,4 @@
-import { Session } from '../entities/session';
+import { Session } from '@core/user/domain/entities/session';
 
 export interface SessionRepository {
   findById(id: string): Promise<Session | null>;

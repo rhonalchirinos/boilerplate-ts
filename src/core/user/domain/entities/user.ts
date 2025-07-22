@@ -1,13 +1,29 @@
 export class User {
   private constructor(
-    private id: string,
+    private readonly id: string,
     private email: string,
     private name: string,
     private password: string,
+    private readonly createdAt: Date = new Date(),
+    private updatedAt: Date | null = null,
   ) {}
 
-  static create(params: { id?: string; email: string; name: string; password: string }): User {
-    return new User(params.id!, params.email, params.name, params.password);
+  static create(params: {
+    id?: string;
+    email?: string;
+    name?: string;
+    password?: string;
+    createdAt?: Date;
+    updatedAt?: Date | null;
+  }): User {
+    return new User(
+      params.id!,
+      params?.email ?? '',
+      params?.name ?? '',
+      params?.password ?? '',
+      params?.createdAt ?? new Date(),
+      params?.updatedAt ?? null,
+    );
   }
 
   changePassword(newPassword: string): void {
@@ -42,8 +58,20 @@ export class User {
     return this.password;
   }
 
-  setId(id: string): void {
-    this.id = id;
+  getCreatedAt(): Date {
+    return this.createdAt;
+  }
+
+  getUpdatedAt(): Date | null {
+    return this.updatedAt;
+  }
+
+  setEmail(email: string): void {
+    this.email = email.toLowerCase();
+  }
+
+  setName(name: string): void {
+    this.name = name;
   }
 
   toJSON(): object {

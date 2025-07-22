@@ -12,7 +12,8 @@ import { JwtRefreshStrategy } from './infra/jwt/refresh/jwt-refresh.strategy';
 import { JwtVerifyStrategy } from './infra/jwt/verify/jwt-verify.strategy';
 import { PrismaSessionRepository } from './infra/repositories/prisma-session.repository';
 import { LoadSessionInteractor } from '@core/user/application/interactors/session/load-session.interactor';
-import { DestroySessionInteractor } from '@core/user/application/interactors/session/destroy-session.interactor';
+import { LogoutInteractor } from '@core/user/application/interactors/logout/logout.interactor';
+import { PrismaDeviceRepository } from './infra/repositories/prima-device.rapository';
 
 const interactors = [
   {
@@ -22,12 +23,21 @@ const interactors = [
       encryptionService: ArgonEncryptionService,
       tokenGenerator: JwtTokenGenerator,
       sessionRepository: PrismaSessionRepository,
-    ) => new LoginInteractor(userRepository, encryptionService, tokenGenerator, sessionRepository),
+      deviceRepository: PrismaDeviceRepository,
+    ) =>
+      new LoginInteractor(
+        userRepository,
+        encryptionService,
+        tokenGenerator,
+        sessionRepository,
+        deviceRepository,
+      ),
     inject: [
       PrismaUserRepository,
       ArgonEncryptionService,
       JwtTokenGenerator,
       PrismaSessionRepository,
+      PrismaDeviceRepository,
     ],
   },
   {
@@ -37,12 +47,21 @@ const interactors = [
       encryptionService: ArgonEncryptionService,
       tokenGenerator: JwtTokenGenerator,
       sessionRepository: PrismaSessionRepository,
-    ) => new SignupInteractor(userRepository, encryptionService, tokenGenerator, sessionRepository),
+      deviceRepository: PrismaDeviceRepository,
+    ) =>
+      new SignupInteractor(
+        userRepository,
+        encryptionService,
+        tokenGenerator,
+        sessionRepository,
+        deviceRepository,
+      ),
     inject: [
       PrismaUserRepository,
       ArgonEncryptionService,
       JwtTokenGenerator,
       PrismaSessionRepository,
+      PrismaDeviceRepository,
     ],
   },
   {
@@ -52,9 +71,9 @@ const interactors = [
     inject: [PrismaSessionRepository],
   },
   {
-    provide: DestroySessionInteractor.name,
+    provide: LogoutInteractor.name,
     useFactory: (sessionRepository: PrismaSessionRepository) =>
-      new DestroySessionInteractor(sessionRepository),
+      new LogoutInteractor(sessionRepository),
     inject: [PrismaSessionRepository],
   },
 ];
@@ -65,6 +84,7 @@ const interactors = [
     ArgonEncryptionService,
     PrismaUserRepository,
     PrismaSessionRepository,
+    PrismaDeviceRepository,
     LoginValidationPipe,
     SignupValidationPipe,
     JwtStrategy,

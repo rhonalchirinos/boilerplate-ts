@@ -2,6 +2,7 @@ import { PrismaService } from '@app/config/database/infra/prisma.service';
 import { User } from '@core/user/domain/entities/user';
 import { UserRepository } from '@core/user/domain/repositories/user.repository';
 import { Injectable } from '@nestjs/common';
+import { UserMapper } from '../mappers/user.mapper';
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
@@ -16,12 +17,7 @@ export class PrismaUserRepository implements UserRepository {
       return null;
     }
 
-    return User.create({
-      id: '' + user.id,
-      email: user.email,
-      name: user.name ?? '',
-      password: user.password ?? '',
-    });
+    return UserMapper.toDomain(user);
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -34,13 +30,7 @@ export class PrismaUserRepository implements UserRepository {
     if (!user) {
       return null;
     }
-
-    return User.create({
-      id: '' + user.id,
-      email: user.email,
-      name: user.name ?? '',
-      password: user.password ?? '',
-    });
+    return UserMapper.toDomain(user);
   }
 
   async existsEmail(email: string): Promise<boolean> {
@@ -57,25 +47,16 @@ export class PrismaUserRepository implements UserRepository {
 
   async create(user: User): Promise<User> {
     const createdUser = await this.prisma.user.create({
-      data: {
-        email: user.getEmail().toLocaleLowerCase(),
-        name: user.getName(),
-        password: user.getPassword(),
-      },
+      data: UserMapper.toPersistence(user),
     });
 
-    user.setId(createdUser.id);
-
-    return user;
+    return UserMapper.toDomain(createdUser);
   }
 
   async update(user: User): Promise<User> {
     await this.prisma.user.update({
       where: { id: user.getId() },
-      data: {
-        name: user.getName(),
-        password: user.getPassword(),
-      },
+      data: UserMapper.toPersistence(user),
     });
 
     return user;

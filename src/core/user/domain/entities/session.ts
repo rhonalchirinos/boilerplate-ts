@@ -1,20 +1,21 @@
 export class Session {
   constructor(
     private id: string | undefined = undefined,
+    private refresh: string,
     private sub: string,
     private userId: string,
-    private refreshToken: string,
     private expiresAt: Date | null,
-    private readonly createdAt: Date = new Date(),
+    private createdAt: Date = new Date(),
+    private deviceId?: string,
   ) {}
 
   isExpired(): boolean {
     return this.expiresAt ? this.expiresAt < new Date() : false;
   }
 
-  renew(sub: string, refreshToken: string, expiresAt: Date): void {
+  renew(sub: string, refresh: string, expiresAt: Date): void {
     this.sub = sub;
-    this.refreshToken = refreshToken;
+    this.refresh = refresh;
     this.expiresAt = expiresAt;
   }
 
@@ -26,8 +27,8 @@ export class Session {
     return this.sub;
   }
 
-  getRefreshToken() {
-    return this.refreshToken;
+  getRefresh() {
+    return this.refresh;
   }
 
   getExpiresAt() {
@@ -42,8 +43,8 @@ export class Session {
     return this.createdAt;
   }
 
-  setRefreshToken(refreshToken: string): void {
-    this.refreshToken = refreshToken;
+  getDeviceId() {
+    return this.deviceId;
   }
 
   setExpiresAt(expiresAt: Date | null): void {
@@ -57,14 +58,16 @@ export class Session {
     expiresAt?: Date | null;
     userId?: string;
     createdAt?: Date;
+    deviceId?: string;
   }): Session {
     return new Session(
       params.id,
+      params.refresh!,
       params.sub!,
       params.userId!,
-      params.refresh!,
       params.expiresAt!,
-      params.createdAt,
+      params.createdAt || new Date(),
+      params.deviceId,
     );
   }
 }

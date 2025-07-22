@@ -1,6 +1,7 @@
 import { PrismaService } from '@app/config/database/infra/prisma.service';
 import { User } from '@core/user/domain/entities/user';
 import { PrismaUserRepository } from './prisma-user.repository';
+import * as prisma from 'generated/prisma';
 
 jest.mock('generated/prisma', () => ({
   PrismaClient: jest.fn().mockImplementation(() => {
@@ -34,7 +35,9 @@ describe('PrismaUserRepository', () => {
       email: 'a@b.com',
       name: 'A',
       password: 'pass',
-    });
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as prisma.User);
 
     const user = await repository.findById('1');
     expect(user).toBeInstanceOf(User);
@@ -45,6 +48,7 @@ describe('PrismaUserRepository', () => {
   it('should return null if user not found by id', async () => {
     const findUniqueSpy = jest.spyOn(prisma.user, 'findUnique');
     findUniqueSpy.mockResolvedValue(null);
+
     const user = await repository.findById('2');
     expect(user).toBeNull();
   });
@@ -56,7 +60,9 @@ describe('PrismaUserRepository', () => {
       email: 'a@b.com',
       name: 'A',
       password: 'pass',
-    });
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as prisma.User);
     const user = await repository.findByEmail('a@b.com');
     expect(user).toBeInstanceOf(User);
     expect(user?.getEmail()).toBe('a@b.com');
@@ -65,6 +71,7 @@ describe('PrismaUserRepository', () => {
   it('should return null if user not found by email', async () => {
     const findUniqueSpy = jest.spyOn(prisma.user, 'findUnique');
     findUniqueSpy.mockResolvedValue(null);
+
     const user = await repository.findByEmail('notfound@b.com');
     expect(user).toBeNull();
   });
@@ -77,7 +84,10 @@ describe('PrismaUserRepository', () => {
       email: 'a@b.com',
       name: 'A',
       password: 'pass',
-    });
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as prisma.User);
+
     const created = await repository.create(user);
     expect(created.getId()).toBe('1');
     expect(createSpy).toHaveBeenCalled();
@@ -98,7 +108,9 @@ describe('PrismaUserRepository', () => {
       email: 'a@b.com',
       name: 'A',
       password: 'pass',
-    });
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as prisma.User);
     const updated = await repository.update(user);
     expect(updated).toBe(user);
     expect(updateSpyOn).toHaveBeenCalled();
@@ -127,7 +139,9 @@ describe('PrismaUserRepository', () => {
       email: 'a@b.com',
       name: 'A',
       password: 'pass',
-    });
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as prisma.User);
     await repository.delete('1');
     expect(deleteSpyOn).toHaveBeenCalledWith({ where: { id: '1' } });
   });

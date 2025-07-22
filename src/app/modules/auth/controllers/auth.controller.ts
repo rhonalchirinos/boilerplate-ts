@@ -16,9 +16,9 @@ import { SignupInteractor } from '@core/user/application/interactors/signup/sign
 import { SignupUserDTO } from './dto/signup.dto';
 import { SignupValidationPipe } from '../infra/zod/signup-validation.pipe';
 import { JwtAuthGuard } from '../infra/jwt/auth/jwt-auth.guard';
-import { DestroySessionInteractor } from '@core/user/application/interactors/session/destroy-session.interactor';
 import { RequestSession } from '@shared/utils/request-session';
 import { Session } from '@core/user/domain/entities/session';
+import { LogoutInteractor } from '@core/user/application/interactors/logout/logout.interactor';
 
 @Controller('auth')
 export class AuthController {
@@ -30,23 +30,43 @@ export class AuthController {
     private loginInteractor: LoginInteractor,
     @Inject(SignupInteractor.name)
     private signupInteractor: SignupInteractor,
-    @Inject(DestroySessionInteractor.name)
-    private destroySessionInteractor: DestroySessionInteractor,
+    @Inject(LogoutInteractor.name)
+    private logoutInteractor: LogoutInteractor,
   ) {}
 
+  private extractRequestMeta(request: RequestSession): {
+    ip?: string;
+    userAgent?: string;
+    platform?: string;
+    browser?: string;
+    osVersion?: string;
+  } {
+    return {
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    };
+  }
+
   @Post('login')
-  async login(@Body(new LoginValidationPipe()) loginDto: LoginDto): Promise<AccessTokenDTO> {
-    return await this.loginInteractor.execute(loginDto.email, loginDto.password);
+  async login(
+    @Body(new LoginValidationPipe()) loginDto: LoginDto,
+    @Request() request: RequestSession,
+  ): Promise<AccessTokenDTO> {
+    const meta = this.extractRequestMeta(request);
+    return await this.loginInteractor.execute(loginDto.email, loginDto.password, meta);
   }
 
   @Post('signup')
   async signup(
     @Body(new SignupValidationPipe()) signupUserDto: SignupUserDTO,
+    @Request() request: RequestSession,
   ): Promise<AccessTokenDTO> {
+    const meta = this.extractRequestMeta(request);
     return await this.signupInteractor.execute(
       signupUserDto.email,
       signupUserDto.password,
       signupUserDto.name!,
+      meta,
     );
   }
 
@@ -54,6 +74,6 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(204)
   async logout(@Request() request: RequestSession): Promise<void> {
-    await this.destroySessionInteractor.execute(request.user as Session);
+    await this.logoutInteractor.execute(request.user as Session);
   }
 }

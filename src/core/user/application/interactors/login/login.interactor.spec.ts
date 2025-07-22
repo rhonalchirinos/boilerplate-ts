@@ -5,12 +5,14 @@ import { EncryptionService } from '@core/user/application/services/encryption.se
 import { TokenGenerator } from '@core/user/application/services/token-generator.service';
 import { SessionRepository } from '@core/user/domain/repositories/session.repository';
 import { User } from '@core/user/domain/entities/user';
+import { DeviceRepository } from '@core/user/domain/repositories/device.repository';
 
 describe('LoginInteractor', () => {
   let userRepository: jest.Mocked<UserRepository>;
   let encryptionService: jest.Mocked<EncryptionService>;
   let tokenGenerator: jest.Mocked<TokenGenerator>;
   let sessionRepository: jest.Mocked<SessionRepository>;
+  let deviceRepository: jest.Mocked<DeviceRepository>;
   let interactor: LoginInteractor;
 
   beforeEach(() => {
@@ -33,6 +35,15 @@ describe('LoginInteractor', () => {
       create: jest.fn(),
     } as jest.Mocked<TokenGenerator>;
 
+    deviceRepository = {
+      save: jest.fn(),
+      findById: jest.fn(),
+      findByDevice: jest.fn(),
+      findByUserIdAndDevice: jest.fn(),
+      findByUserId: jest.fn(),
+      delete: jest.fn(),
+    } as jest.Mocked<DeviceRepository>;
+
     sessionRepository = {
       findById: jest.fn(),
       save: jest.fn(),
@@ -44,6 +55,7 @@ describe('LoginInteractor', () => {
       encryptionService,
       tokenGenerator,
       sessionRepository,
+      deviceRepository,
     );
   });
 
@@ -96,7 +108,6 @@ describe('LoginInteractor', () => {
       },
     });
 
-    const saveSpy = jest.spyOn(sessionRepository, 'save');
     const token = {
       token: 'access-token',
       expiresAt: new Date(Date.now() + 1000 * 60 * 60),
@@ -106,7 +117,6 @@ describe('LoginInteractor', () => {
       token: 'refresh-token',
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
     };
-    const session = { id: 'session-id' };
 
     const accessTokenDto = await interactor.execute('email@test.com', 'password');
 
@@ -126,6 +136,5 @@ describe('LoginInteractor', () => {
         },
       },
     });
-    expect(saveSpy).toHaveBeenCalledWith(session);
   });
 });

@@ -1,32 +1,34 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext, INestApplication, UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
+import { ErrorDTO } from '@shared/utils/format-error';
+import { RequestSession } from '@shared/utils/request-session';
 import { LoginInteractor } from '@core/user/application/interactors/login/login.interactor';
 import { SignupInteractor } from '@core/user/application/interactors/signup/signup.interactor';
 import { AccessTokenDTO } from '@core/user/application/dto/access-token.dto';
 import { InvalidCredentialsException } from '@core/user/domain/exceptions/invalid-credentials.exception';
-import { ErrorDTO } from '@shared/utils/format-error';
 import { BusinessExceptionFilter } from '@app/filters/business-exception.filter';
-import * as request from 'supertest';
-import { DestroySessionInteractor } from '@core/user/application/interactors/session/destroy-session.interactor';
+import { LogoutInteractor } from '@core/user/application/interactors/logout/logout.interactor';
 import { Session } from '@core/user/domain/entities/session';
-import { RequestSession } from '@shared/utils/request-session';
 import { JwtAuthGuard } from '@app/modules/auth/infra/jwt/auth/jwt-auth.guard';
+
+import * as request from 'supertest';
+import { App } from 'supertest/types';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let mockLoginInteractor: jest.Mocked<LoginInteractor>;
   let mockSignupInteractor: jest.Mocked<SignupInteractor>;
-  let mockDestroySessionInteractor: jest.Mocked<DestroySessionInteractor>;
+  let mockLogoutInteractor: jest.Mocked<LogoutInteractor>;
 
   beforeAll(async () => {
     mockLoginInteractor = { execute: jest.fn() } as unknown as jest.Mocked<LoginInteractor>;
 
     mockSignupInteractor = { execute: jest.fn() } as unknown as jest.Mocked<SignupInteractor>;
 
-    mockDestroySessionInteractor = {
+    mockLogoutInteractor = {
       execute: jest.fn(),
-    } as unknown as jest.Mocked<DestroySessionInteractor>;
+    } as unknown as jest.Mocked<LogoutInteractor>;
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -40,8 +42,8 @@ describe('AuthController (e2e)', () => {
           useValue: mockSignupInteractor,
         },
         {
-          provide: DestroySessionInteractor.name,
-          useValue: mockDestroySessionInteractor,
+          provide: LogoutInteractor.name,
+          useValue: mockLogoutInteractor,
         },
       ],
     })
@@ -79,11 +81,14 @@ describe('AuthController (e2e)', () => {
       };
       const executeMock = jest.spyOn(mockLoginInteractor, 'execute');
       executeMock.mockResolvedValue(accessToken);
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpServer() as App)
         .post('/auth/login')
         .send(body)
         .expect(201);
-      expect(executeMock).toHaveBeenCalledWith(body.email, body.password);
+      expect(executeMock).toHaveBeenCalledWith(body.email, body.password, {
+        ip: expect.any(String) as string,
+        userAgent: undefined,
+      });
       expect(response.body).toEqual(accessToken);
     });
 
@@ -93,7 +98,7 @@ describe('AuthController (e2e)', () => {
       const executeMock = jest.spyOn(mockLoginInteractor, 'execute');
       executeMock.mockRejectedValue(error);
 
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpServer() as App)
         .post('/auth/login')
         .send(body)
         .expect(401);
@@ -104,7 +109,7 @@ describe('AuthController (e2e)', () => {
 
     it('should return 422 if validation fails (invalid email)', async () => {
       const invalidBody = { email: 'not-an-email', password: 'password123' };
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpServer() as App)
         .post('/auth/login')
         .send(invalidBody)
         .expect(422);
@@ -134,11 +139,14 @@ describe('AuthController (e2e)', () => {
       };
       const executeMock = jest.spyOn(mockSignupInteractor, 'execute');
       executeMock.mockResolvedValue(accessToken);
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpServer() as App)
         .post('/auth/signup')
         .send(body)
         .expect(201);
-      expect(executeMock).toHaveBeenCalledWith(body.email, body.password, body.name);
+      expect(executeMock).toHaveBeenCalledWith(body.email, body.password, body.name, {
+        ip: expect.any(String) as string,
+        userAgent: undefined,
+      });
       expect(response.body).toEqual(accessToken);
     });
 
@@ -165,7 +173,7 @@ describe('AuthController (e2e)', () => {
       };
       const executeMock = jest.spyOn(mockSignupInteractor, 'execute');
       executeMock.mockRejectedValue(error);
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpServer() as App)
         .post('/auth/signup')
         .send(body)
         .expect(422);
@@ -190,7 +198,7 @@ describe('AuthController (e2e)', () => {
 
     it('should return 422 if validation fails (invalid email)', async () => {
       const invalidBody = { email: 'not-an-email', password: 'signupPass123' };
-      const response = await request(app.getHttpServer())
+      const response = await request(app.getHttpServer() as App)
         .post('/auth/signup')
         .send(invalidBody)
         .expect(422);
@@ -215,8 +223,10 @@ describe('AuthController (e2e)', () => {
         request.user = session;
         return true;
       });
-      const destroySessionSpy = jest.spyOn(mockDestroySessionInteractor, 'execute');
-      await request(app.getHttpServer()).delete('/auth/logout').expect(204);
+      const destroySessionSpy = jest.spyOn(mockLogoutInteractor, 'execute');
+      await request(app.getHttpServer() as App)
+        .delete('/auth/logout')
+        .expect(204);
       expect(destroySessionSpy).toHaveBeenCalledWith(session);
     });
     it('should return 401 if user is not authenticated', async () => {
@@ -224,7 +234,9 @@ describe('AuthController (e2e)', () => {
       jest.spyOn(guard, 'canActivate').mockImplementation(() => {
         throw new UnauthorizedException();
       });
-      await request(app.getHttpServer()).delete('/auth/logout').expect(401);
+      await request(app.getHttpServer() as App)
+        .delete('/auth/logout')
+        .expect(401);
     });
   });
 });

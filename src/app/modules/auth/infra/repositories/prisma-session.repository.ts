@@ -1,8 +1,8 @@
 import { PrismaService } from '@app/config/database/infra/prisma.service';
 import { Session } from '@core/user/domain/entities/session';
 import { SessionRepository } from '@core/user/domain/repositories/session.repository';
-import { Injectable } from '@nestjs/common';
 import { SessionMapper } from '../mappers/session.mapper';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class PrismaSessionRepository implements SessionRepository {
@@ -19,9 +19,11 @@ export class PrismaSessionRepository implements SessionRepository {
   async create(session: Session): Promise<Session> {
     const created = await this.prisma.session.create({
       data: {
+        deviceId: session.getDeviceId(),
         userId: session.getUserId(),
-        refresh: session.getRefreshToken(),
+        refresh: session.getRefresh(),
         sub: session.getSub(),
+        expiresAt: session.getExpiresAt(),
       },
     });
 
@@ -33,7 +35,7 @@ export class PrismaSessionRepository implements SessionRepository {
       where: { id: session.getId() },
       data: {
         userId: session.getUserId(),
-        refresh: session.getRefreshToken(),
+        refresh: session.getRefresh(),
         expiresAt: session.getExpiresAt(),
       },
     });
